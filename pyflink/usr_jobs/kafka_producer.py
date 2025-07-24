@@ -8,7 +8,6 @@ from kafka import KafkaProducer
 SLEEP_TIME = 1 
 
 def generate_stock_data() -> dict:
-    """Generates random stock data."""
     tickers = ['GOOGL', 'AAPL', 'MSFT', 'AMZN', 'TSLA']
     ticker = random.choice(tickers)
     price = round(random.uniform(100, 1500), 2)
@@ -24,10 +23,6 @@ def generate_stock_data() -> dict:
     return stock_data
 
 def main() -> None:
-    """
-    Controls the flow of the producer. It generates stock data
-    and sends it to the 'sensors' topic.
-    """
     producer = KafkaProducer(
         bootstrap_servers="localhost:9092",
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),

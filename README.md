@@ -1,6 +1,3 @@
-Sure! Here's the full `README.md` content written directly below, with **no emojis**, clean markdown formatting, and clearly structured sections:
-
----
 
 # Real-Time Stock Trade Analytics with Apache Flink, Kafka, and PostgreSQL
 

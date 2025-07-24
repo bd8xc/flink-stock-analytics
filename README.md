@@ -86,18 +86,24 @@ Password: `flinkpassword`
 Create the table:
 
 ```sql
-CREATE TABLE raw_sensors_data (
-    message_id VARCHAR(255) PRIMARY KEY,
-    sensor_id INT NOT NULL,
-    message TEXT NOT NULL,
-    timestamp TIMESTAMPTZ NOT NULL
-);
++```sql
++CREATE TABLE stock_trades (
++    trade_id VARCHAR(255) PRIMARY KEY,
++    symbol VARCHAR(10) NOT NULL,
++    price NUMERIC(10, 4) NOT NULL,
++    volume INT NOT NULL,
++    trade_timestamp TIMESTAMPTZ NOT NULL,
++    -- Add other fields if your simulated trade events contain more data
++    -- For example:
++    -- trade_type VARCHAR(10), -- e.g., 'BUY', 'SELL'
++    -- exchange VARCHAR(10)
+ );
 ```
 
 Verify:
 
 ```sql
-\d raw_sensors_data
+\d stock_trades
 ```
 
 ---
@@ -152,9 +158,7 @@ docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:90
 
 ```sql
 SELECT
-    *,
-    (message::json->>'volume')::numeric AS volume
-FROM raw_sensors_data
+FROM stock_trades
 LIMIT 10;
 ```
 

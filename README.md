@@ -1,70 +1,162 @@
-Real-Time Stock Trade Analytics with Apache Flink, Kafka, and PostgreSQLThis project implements a real-time streaming data pipeline that simulates stock trade events, filters high-volume trades using Apache Flink, and stores raw trade data in PostgreSQL. The architecture is containerized using Docker Compose and is suitable for monitoring trading activity in a scalable and modular environment.Problem StatementIn high-frequency trading environments, it is critical to detect and respond to significant trade events in real time. For instance, identifying trades with unusually large volumes can provide valuable insights into market movements and institutional behavior.This project addresses the challenge by:Ingesting simulated stock trade events into a Kafka topic.Using Apache Flink to detect trades with volume exceeding a predefined threshold.Forwarding alerts to a separate Kafka topic.Storing all raw trade data into a PostgreSQL database for long-term storage and analysis.Architecture Overview
+# Real-Time Stock Trade Analytics with Apache Flink, Kafka, and PostgreSQL
+
+This project implements a real-time streaming data pipeline that simulates stock trade events, filters high-volume trades using Apache Flink, and stores raw trade data in PostgreSQL. The architecture is containerized using Docker Compose and is suitable for monitoring trading activity in a scalable and modular environment.
+
+## Problem Statement
+
+In high-frequency trading environments, it is critical to detect and respond to significant trade events in real time. For instance, identifying trades with unusually large volumes can provide valuable insights into market movements and institutional behavior.
+
+This project addresses the challenge by:
+
+* Ingesting simulated stock trade events into a Kafka topic.
+* Using Apache Flink to detect trades with volume exceeding a predefined threshold.
+* Forwarding alerts to a separate Kafka topic.
+* Storing all raw trade data into a PostgreSQL database for long-term storage and analysis.
+
+## Architecture Overview
+
+```
 Kafka Producer → Kafka Topic (sensors) → Flink Consumer
-├── PostgreSQL (raw trade data)
-└── Kafka Topic (alerts)
+     ├── PostgreSQL (raw trade data)
+     └── Kafka Topic (alerts)
+```
 
+* Kafka is used for decoupling and reliable messaging between components.
+* Flink is used for real-time stream processing.
+* PostgreSQL stores the raw trade data for querying and historical analysis.
+* Python powers the producer and the Flink pipeline (via PyFlink).
 
-Kafka is used for decoupling and reliable messaging between components.Flink is used for real-time stream processing.PostgreSQL stores the raw trade data for querying and historical analysis.Python powers the producer and the Flink pipeline (via PyFlink).Technology StackApache KafkaApache Flink (PyFlink)PostgreSQLDocker, Docker ComposePython 3.10Future DevelopmentThis project serves as a strong foundation for real-time stock trade analytics. Potential future enhancements include:Scaling for Higher Volume & Wider Schemas: Implementing a producer that generates a significantly higher volume of data (e.g., millions of events per second) with a wider schema (e.g., 60+ columns) across multiple Kafka topics (e.g., 25+ topics).Advanced Flink Analytics:Utilizing Event Time and Watermarks for accurate, time-based computations (e.g., 1-minute Volume-Weighted Average Price - VWAP).Implementing Windowing (e.g., Tumbling or Sliding windows) to calculate aggregates (total volume, average price, min/max) over specific time intervals.Leveraging Stateful Processing with Flink's managed state for more complex continuous calculations (e.g., running averages, pattern detection).Performance Monitoring & Optimization:Implementing tools like cAdvisor for detailed container resource utilization (CPU, memory, network I/O).Analyzing Flink UI metrics (records in/out per second, backpressure) and Kafka consumer lag to identify performance bottlenecks.Optimizing Flink's parallelism (Task Slots) and sink configurations (batch size, interval) for maximum throughput.Real-time Dashboard: Connecting processed data (e.g., from a new aggregated PostgreSQL table or a dedicated Kafka topic) to a real-time visualization tool like Grafana for live monitoring of market metrics and alerts.Machine Learning Integration: Feeding processed features into real-time ML models deployed with Flink for predictive analytics (e.g., fraud detection, price prediction).Setup InstructionsThese instructions assume you are in the root directory of the flink-stock-analytics project (where docker-compose.yml is located).Step 0: Stop and Remove Existing Docker Containers (Clean Up)First, stop and remove any previously running Docker containers and their associated volumes to ensure a completely clean slate.docker compose down -v
+## Technology Stack
 
+* Apache Kafka
+* Apache Flink (PyFlink)
+* PostgreSQL
+* Docker, Docker Compose
+* Python 3.10
 
-This command stops and removes all services defined in your docker-compose.yml and also removes anonymous volumes, ensuring no lingering data.Step 1: Launch Docker Containers (with Build)Start all the services defined in your docker-compose.yml file (Zookeeper, Kafka, Flink JobManager, Flink TaskManager, PostgreSQL). The --build flag ensures that Flink images are rebuilt with the latest code changes.docker compose up -d --build
+## Future Development
 
+This project serves as a strong foundation for real-time stock trade analytics. Potential future enhancements include:
 
-The -d flag runs the containers in detached mode (in the background). You can watch the logs if you omit -d.Step 2: Drop and Recreate Kafka TopicsEven after stopping containers, Kafka topic metadata can sometimes persist. Let's explicitly drop and recreate them to be sure.Connect to the Kafka container and delete the existing topics:docker compose exec kafka kafka-topics --delete --topic sensors --bootstrap-server localhost:9092
+### Scaling for Higher Volume & Wider Schemas
+
+* Implementing a producer that generates a significantly higher volume of data (e.g., millions of events per second) with a wider schema (e.g., 60+ columns) across multiple Kafka topics (e.g., 25+ topics).
+
+### Advanced Flink Analytics
+
+* Utilizing Event Time and Watermarks for accurate, time-based computations (e.g., 1-minute Volume-Weighted Average Price - VWAP).
+* Implementing Windowing (e.g., Tumbling or Sliding windows) to calculate aggregates like total volume, average price, min/max over time.
+* Leveraging Stateful Processing using Flink's managed state for complex continuous calculations such as running averages or pattern detection.
+
+### Performance Monitoring & Optimization
+
+* Using tools like cAdvisor for monitoring container resource utilization (CPU, memory, network I/O).
+* Analyzing Flink UI metrics (records in/out per second, backpressure) and Kafka consumer lag.
+* Optimizing Flink's parallelism (task slots) and sink configurations (batch size, interval) for maximum throughput.
+
+### Real-Time Dashboard
+
+* Connecting processed data (from PostgreSQL or a dedicated Kafka topic) to visualization tools like Grafana for live market metrics and alerts.
+
+### Machine Learning Integration
+
+* Feeding processed features into real-time ML models in Flink for use cases like fraud detection, price prediction, etc.
+
+## Setup Instructions
+
+Assumes you're in the root directory of the project where `docker-compose.yml` exists.
+
+### Step 0: Stop and Remove Existing Containers
+
+```bash
+docker compose down -v
+```
+
+### Step 1: Launch Docker Containers
+
+```bash
+docker compose up -d --build
+```
+
+### Step 2: Drop and Recreate Kafka Topics
+
+```bash
+docker compose exec kafka kafka-topics --delete --topic sensors --bootstrap-server localhost:9092
 docker compose exec kafka kafka-topics --delete --topic alerts --bootstrap-server localhost:9092
 
-
-You might see warnings like "Topic sensors does not exist" if they weren't created before, which is fine.Now, recreate the necessary topics:docker compose exec kafka kafka-topics --create --topic sensors --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+docker compose exec kafka kafka-topics --create --topic sensors --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 docker compose exec kafka kafka-topics --create --topic alerts --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
 
+docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+```
 
-Verify topic creation:docker compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+### Step 3: Connect to PostgreSQL and Create Table
 
+```bash
+docker compose exec postgres psql -h localhost -U flinkuser -d flinkdb
+```
 
-Step 3: Connect to PostgreSQL and Drop/Create TableConnect to the PostgreSQL instance:docker compose exec postgres psql -h localhost -U flinkuser -d flinkdb
+Password: `flinkpassword`
 
+Inside psql:
 
-When prompted for the password, enter: flinkpasswordOnce connected to the flinkdb prompt, first drop the stock_trades table if it exists. This cleans up any old schema or data:DROP TABLE IF EXISTS stock_trades;
+```sql
+DROP TABLE IF EXISTS stock_trades;
 
-
-(You might see a notice "NOTICE: table "stock_trades" does not exist, skipping" if it wasn't there, which is harmless.)Now, create the stock_trades table with the correct schema for stock trade data, ensuring ticker and trade_timestamp column names match the Flink job:CREATE TABLE stock_trades (
+CREATE TABLE stock_trades (
     trade_id VARCHAR(255) PRIMARY KEY,
     ticker VARCHAR(10) NOT NULL,
     price NUMERIC(10, 4) NOT NULL,
     volume INT NOT NULL,
     trade_timestamp TIMESTAMPTZ NOT NULL
-    -- Add other fields if your simulated trade events contain more data
-    -- For example:
-    -- trade_type VARCHAR(10), -- e.g., 'BUY', 'SELL'
+    -- Additional fields if needed:
+    -- trade_type VARCHAR(10),
     -- exchange VARCHAR(10)
 );
 
+\d stock_trades
+\q
+```
 
-Verify the table creation and schema:\d stock_trades
+### Step 4: Start Kafka Producer
 
+```bash
+pip install kafka-python
+python pyflink/usr_jobs/kafka_producer.py
+```
 
-You should see the newly defined columns.Type \q and press Enter to exit the PostgreSQL command line.Step 4: Start Kafka ProducerInstall the required Python dependency (if not already installed in your local environment):pip install kafka-python
+### Step 5: Run Flink Job to Store Data in PostgreSQL
 
+```bash
+docker compose exec flink-jobmanager flink run -py /opt/flink/usr_jobs/postgres_sink.py
+```
 
-Run the producer script in a new terminal window. This will start generating and sending simulated stock trade events to the sensors topic:python pyflink/usr_jobs/kafka_producer.py
+Visit Flink Web UI at: [http://localhost:8081](http://localhost:8081)
 
+### Step 6: Query Raw Trade Data
 
-You should see output indicating that stock data is being produced. Keep this terminal window open.Step 5: Run Flink Consumer (to Store Data in PostgreSQL)In a separate new terminal window, submit the Flink job that processes the stock trade stream and stores it into PostgreSQL:docker compose exec flink-jobmanager flink run -py /opt/flink/usr_jobs/postgres_sink.py
+```bash
+docker compose exec postgres psql -h localhost -U flinkuser -d flinkdb
+```
 
+Query:
 
-This command runs the postgres_sink.py job, which is configured to send data to your PostgreSQL stock_trades table.Monitor Flink jobs at the Web UI: http://localhost:8081Step 6: Query Raw Trade Data in PostgreSQLIn yet another new terminal window, connect to PostgreSQL again:docker compose exec postgres psql -h localhost -U flinkuser -d flinkdb
-
-
-Password: flinkpasswordNow, query the stock_trades table. Since the Flink job writes data in batches, it might take a few seconds for the first records to appear.SELECT
-    trade_id, ticker, price, volume, trade_timestamp
+```sql
+SELECT trade_id, ticker, price, volume, trade_timestamp
 FROM stock_trades
 LIMIT 10;
+```
 
+### Step 7 (Optional): View High-Volume Alerts
 
-You should now see the first 10 rows of stock trade data in your table. If you continue running the producer and the Flink job, more data will accumulate.(Optional) Step 7: Consume Alerts from KafkaIn a fourth terminal window, you can read the filtered alerts (trades with volume > 1,000,000) that Flink also sends to the alerts Kafka topic:docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic alerts --from-beginning
+```bash
+docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic alerts --from-beginning
+```
 
+## Directory Structure
 
-You should see JSON messages for trades that exceeded the volume threshold.Directory Structure.
+```
+.
 ├── usr_jobs/
 │   ├── kafka_producer.py
 │   ├── kafka_consumer.py
@@ -74,5 +166,15 @@ You should see JSON messages for trades that exceeded the volume threshold.Direc
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
 
-LicenseThis project is a modified version of an open-source streaming pipeline. Please refer to the LICENSE file for more details or apply your own license if deploying publicly.AuthorDeveloped and maintained by Bikram Dutta. For inquiries, suggestions, or collaboration, please open an issue or contact directly via GitHub.
+## License
+
+This project is a modified version of an open-source streaming pipeline. Please refer to the LICENSE file for more details or apply your own license if deploying publicly.
+
+## Author
+
+Developed and maintained by **Bikram Dutta**. For inquiries, suggestions, or collaboration, please open an issue or contact directly via GitHub.
+
+```
+
